@@ -20,7 +20,30 @@ function App() {
   const [previousScreenshotIndex, setPreviousScreenshotIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [slideDirection, setSlideDirection] = useState('right');
+  const [visibleScreenshots, setVisibleScreenshots] = useState(5);
   const screenshotsRef = useRef(null);
+
+  // Detect screen size and set number of visible screenshots
+  useEffect(() => {
+    const updateVisibleScreenshots = () => {
+      const width = window.innerWidth;
+      if (width <= 600) {
+        setVisibleScreenshots(1); // Show 1 on mobile
+      } else if (width <= 768) {
+        setVisibleScreenshots(2); // Show 2 on small tablet
+      } else if (width <= 1024) {
+        setVisibleScreenshots(3); // Show 3 on tablet
+      } else if (width <= 1200) {
+        setVisibleScreenshots(4); // Show 4 on small desktop
+      } else {
+        setVisibleScreenshots(5); // Show 5 on desktop
+      }
+    };
+
+    updateVisibleScreenshots();
+    window.addEventListener('resize', updateVisibleScreenshots);
+    return () => window.removeEventListener('resize', updateVisibleScreenshots);
+  }, []);
 
   // Intersection Observer for fade-in animations
   useEffect(() => {
@@ -62,13 +85,12 @@ function App() {
     setPhotoToggle(!photoToggle);
   };
 
-  // Screenshot scroll handlers
+  // Screenshot scroll handlers - Updated for responsive display
   const scrollScreenshots = (direction) => {
     if (isTransitioning) return; // Prevent multiple clicks during transition
 
     const totalScreenshots = 7;
-    const visibleCount = 5;
-    const maxIndex = totalScreenshots - visibleCount; // Max is 2 (shows screenshots 3-7)
+    const maxIndex = totalScreenshots - visibleScreenshots;
 
     setPreviousScreenshotIndex(currentScreenshotIndex);
     setIsTransitioning(true);
@@ -110,6 +132,9 @@ function App() {
     { src: screenshot7, alt: "Snap Calories", label: "Snap Calories" }
   ];
 
+  // Calculate max index based on current visible screenshots
+  const maxIndex = screenshots.length - visibleScreenshots;
+
   return (
     <div className="App">
       <a href="#main-content" className="skip-link">Skip to main content</a>
@@ -144,27 +169,28 @@ function App() {
 
       <main id="main-content">
         {/* Hero Section */}
-        <section className="hero" aria-labelledby="hero-title">
-          <div className="container">
-            <div className="hero-content">
-              <span className="hero-badge">Revolutionary Nutrition App</span>
+     <section className="hero" aria-labelledby="hero-title">
+  <div className="container">
+    <div className="hero-content">
+      <span className="hero-badge">Revolutionary Nutrition App</span>
 
-              <h1 id="hero-title" className="text-massive hero-title">
-                EAT<br />
-                ANYWHERE.<br />
-                <span className="accent">LOSE WEIGHT</span><br />
-                EVERYWHERE.
-              </h1>
+      <h1 id="hero-title" className="text-massive hero-title">
+        <span className="hero-title-line">EAT</span>
+        <span className="hero-title-line">ANYWHERE.</span>
+        <span className="hero-title-line hero-title-nowrap">
+          <span className="accent">LOSE WEIGHT</span>
+        </span>
+        <span className="hero-title-line">EVERYWHERE.</span>
+      </h1>
 
-              <p className="text-body hero-subtitle">
-                Location-based nutrition app that turns restaurants into your personal weight loss ally. Never guess what to eat again.
-              </p>
+      <p className="text-body hero-subtitle">
+        Location-based nutrition app that turns restaurants into your personal weight loss ally. Never guess what to eat again.
+      </p>
 
-              <a href="#download" className="btn btn-primary" onClick={(e) => handleSmoothScroll(e, '#download')}>Download Free Now</a>
-            </div>
-          </div>
-        </section>
-
+      <a href="#download" className="btn btn-primary" onClick={(e) => handleSmoothScroll(e, '#download')}>Download Free Now</a>
+    </div>
+  </div>
+</section>
         {/* Scrolling Text */}
         <div className="scrolling-text" aria-hidden="true">
           <div className="scrolling-content">
@@ -242,7 +268,7 @@ function App() {
                   {/* Previous screenshots - sliding out */}
                   {isTransitioning && (
                     <div className={`app-screenshots app-screenshots-old slide-out-${slideDirection}`}>
-                      {screenshots.slice(previousScreenshotIndex, previousScreenshotIndex + 5).map((screenshot, index) => (
+                      {screenshots.slice(previousScreenshotIndex, previousScreenshotIndex + visibleScreenshots).map((screenshot, index) => (
                         <div
                           className="screenshot-card"
                           key={`old-screenshot-${previousScreenshotIndex}-${index}`}
@@ -258,7 +284,7 @@ function App() {
 
                   {/* Current screenshots - sliding in */}
                   <div className={`app-screenshots ${isTransitioning ? `slide-in-${slideDirection}` : ''}`} ref={screenshotsRef}>
-                    {screenshots.slice(currentScreenshotIndex, currentScreenshotIndex + 5).map((screenshot, index) => (
+                    {screenshots.slice(currentScreenshotIndex, currentScreenshotIndex + visibleScreenshots).map((screenshot, index) => (
                       <div
                         className="screenshot-card"
                         key={`screenshot-${currentScreenshotIndex}-${index}`}
@@ -276,8 +302,8 @@ function App() {
                   className="carousel-arrow carousel-arrow-right"
                   onClick={() => scrollScreenshots('right')}
                   aria-label="Scroll screenshots right"
-                  disabled={currentScreenshotIndex >= 2}
-                  style={{ opacity: currentScreenshotIndex >= 2 ? 0.3 : 1, cursor: currentScreenshotIndex >= 2 ? 'not-allowed' : 'pointer' }}
+                  disabled={currentScreenshotIndex >= maxIndex}
+                  style={{ opacity: currentScreenshotIndex >= maxIndex ? 0.3 : 1, cursor: currentScreenshotIndex >= maxIndex ? 'not-allowed' : 'pointer' }}
                 >
                   ›
                 </button>
